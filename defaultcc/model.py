@@ -18,7 +18,8 @@ class DefaultCC(object):
 
     def __init__(self, env, name=None, db=None):
         self.env = env
-        self.name = self.cc = None
+        self.name = name
+        self.cc = None
         if name:
             if not db:
                 db = self.env.get_db_cnx()
@@ -27,7 +28,6 @@ class DefaultCC(object):
                            "WHERE name=%s", (name,))
             row = cursor.fetchone()
             if row:
-                self.name = name
                 self.cc = row[0] or None
 
     def delete(self, db=None):
