@@ -117,7 +117,16 @@ class DefaultCCAdmin(Component):
 
     def filter_stream(self, req, method, filename, stream, data):
         if 'TICKET_ADMIN' in req.perm and req.path_info.startswith('/admin/ticket/components'):
-            if data.get('components'):
+            if data.get('component'):
+                cc = DefaultCC(self.env, data.get('component').name)
+                filter = Transformer('//form[@id="modcomp"]/fieldset/div[@class="field"][2]')
+                filter = filter.after(tag.div("Default CC:",
+                                              tag.br(),
+                                              tag.input(type='text', name='defaultcc', value=cc.cc),
+                                              class_='field')) \
+                                              .before(tag.input(type='hidden', name='old_name', value=cc.name))
+                return stream | filter
+            else:
                 filter = Transformer('//form[@id="addcomponent"]/fieldset/div[@class="buttons"]')
                 stream |= filter.before(tag.div("Default CC:",
                                                 tag.br(),
@@ -137,15 +146,5 @@ class DefaultCCAdmin(Component):
                     filter = Transformer('//table[@id="complist"]/tbody/tr[%d]' % (i + 1))
                     stream |= filter.append(tag.td(default_cc, class_='defaultcc'))
                 return stream
-
-            elif data.get('component'):
-                cc = DefaultCC(self.env, data.get('component').name)
-                filter = Transformer('//form[@id="modcomp"]/fieldset/div[@class="field"][2]')
-                filter = filter.after(tag.div("Default CC:",
-                                              tag.br(),
-                                              tag.input(type='text', name='defaultcc', value=cc.cc),
-                                              class_='field')) \
-                                              .before(tag.input(type='hidden', name='old_name', value=cc.name))
-                return stream | filter
 
         return stream
