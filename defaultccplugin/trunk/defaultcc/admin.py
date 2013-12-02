@@ -12,7 +12,7 @@
 
 from genshi.builder import tag
 from genshi.filters import Transformer
-from trac.core import *
+from trac.core import Component, TracError, implements
 from trac.db import Column, DatabaseManager, Index, Table
 from trac.env import IEnvironmentSetupParticipant
 from trac.resource import ResourceNotFound
@@ -119,14 +119,14 @@ class DefaultCCAdmin(Component):
         if 'TICKET_ADMIN' in req.perm and req.path_info.startswith('/admin/ticket/components'):
             if data.get('components'):
                 filter = Transformer('//form[@id="addcomponent"]/fieldset/div[@class="buttons"]')
-                stream = stream | filter.before(tag.div("Default CC:",
+                stream |= filter.before(tag.div("Default CC:",
                                                 tag.br(),
                                                 tag.input(type='text', name='defaultcc'),
                                                 class_='field'))
 
                 default_ccs = DefaultCC.select(self.env)
 
-                stream = stream | Transformer('//table[@id="complist"]/thead/tr') \
+                stream |= Transformer('//table[@id="complist"]/thead/tr') \
                     .append(tag.th('Default CC'))
 
                 for i, comp in enumerate(data.get('components')):
