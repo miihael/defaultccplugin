@@ -107,6 +107,10 @@ class DefaultCCAdmin(Component):
         return handler
 
     def post_process_request(self, req, template, data, content_type):
+        if template == 'admin_components.html' and 'components' in data:
+            # Prior to Trac 1.0.2-r11919, components was a generator and
+            # expanding the generator causes the table to not be rendered
+            data['components'] = list(data['components'])
         return template, data, content_type
 
     # ITemplateStreamFilter methods
@@ -125,25 +129,14 @@ class DefaultCCAdmin(Component):
                 stream = stream | Transformer('//table[@id="complist"]/thead/tr') \
                     .append(tag.th('Default CC'))
 
-                filter = Transformer('//table[@id="complist"]/tbody')
-                default_comp = self.config.get('ticket', 'default_component')
-                for comp in data.get('components'):
-                    if comp.name == default_comp:
-                        default_tag = tag.input(type='radio', name='default', value=comp.name, checked='checked')
-                    else:
-                        default_tag = tag.input(type='radio', name='default', value=comp.name)
-
+                for i, comp in enumerate(data.get('components')):
                     if comp.name in default_ccs:
                         default_cc = default_ccs[comp.name]
                     else:
                         default_cc = ''
-
-                    filter = filter.append(tag.tr(tag.td(tag.input(type='checkbox', name='sel', value=comp.name), class_='sel'),
-                                                  tag.td(tag.a(comp.name, href=req.href.admin('ticket', 'components') + '/' + comp.name), class_='name'),
-                                                  tag.td(comp.owner, class_='owner'),
-                                                  tag.td(default_tag, class_='default'),
-                                                  tag.td(default_cc, class_='defaultcc')))
-                return stream | filter
+                    filter = Transformer('//table[@id="complist"]/tbody/tr[%d]' % (i + 1))
+                    stream |= filter.append(tag.td(default_cc, class_='defaultcc'))
+                return stream
 
             elif data.get('component'):
                 cc = DefaultCC(self.env, data.get('component').name)
