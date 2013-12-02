@@ -140,12 +140,12 @@ class DefaultCCAdmin(Component):
 
             elif data.get('component'):
                 cc = DefaultCC(self.env, data.get('component').name)
-                filter = Transformer('//form[@id="modcomp"]/fieldset/div[@class="buttons"]')
-                filter = filter.before(tag.div("Default CC:",
-                                               tag.br(),
-                                               tag.input(type='text', name='defaultcc', value=cc.cc),
-                                               class_='field')) \
-                                               .before(tag.input(type='hidden', name='old_name', value=cc.name))
+                filter = Transformer('//form[@id="modcomp"]/fieldset/div[@class="field"][2]')
+                filter = filter.after(tag.div("Default CC:",
+                                              tag.br(),
+                                              tag.input(type='text', name='defaultcc', value=cc.cc),
+                                              class_='field')) \
+                                              .before(tag.input(type='hidden', name='old_name', value=cc.name))
                 return stream | filter
 
         return stream
