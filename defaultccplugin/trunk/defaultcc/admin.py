@@ -74,7 +74,7 @@ class DefaultCCAdmin(Component):
                 new_name = req.args.get('name')
                 old_cc = DefaultCC(self.env, old_name)
                 new_cc = DefaultCC(self.env, new_name)
-                new_cc.cc = req.args.get('defaultcc')
+                new_cc.cc = req.args.get('defaultcc', '')
                 if old_name == new_name:
                     old_cc.delete()
                     new_cc.insert()
@@ -91,7 +91,7 @@ class DefaultCCAdmin(Component):
                 except ResourceNotFound:
                     cc = DefaultCC(self.env, name)
                     cc.name = name
-                    cc.cc = req.args.get('defaultcc')
+                    cc.cc = req.args.get('defaultcc', '')
                     cc.insert()
             elif req.args.get('remove'):
                 if req.args.get('sel'):
