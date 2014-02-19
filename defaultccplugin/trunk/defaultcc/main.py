@@ -17,8 +17,8 @@ from defaultcc.model import DefaultCC
 
 class TicketDefaultCC(Component):
     """Automatically adds a default CC list when new tickets are created.
-    
-    Tickets are modified at the time of creation by adding the component's 
+
+    Tickets are modified at the time of creation by adding the component's
     default CC list to the ticket's CC list.
     """
 
