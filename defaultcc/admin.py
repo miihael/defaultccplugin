@@ -21,21 +21,24 @@ from trac.web.api import IRequestFilter, ITemplateStreamFilter
 
 from defaultcc.model import DefaultCC
 
+
 class DefaultCCAdmin(Component):
     """Allows to setup a default CC list per component through the component
     admin UI.
     """
 
-    implements(IEnvironmentSetupParticipant, ITemplateStreamFilter, IRequestFilter)
+    implements(IEnvironmentSetupParticipant, ITemplateStreamFilter,
+               IRequestFilter)
 
-    # IEnvironmentSetupParticipant implementation
     SCHEMA = [
         Table('component_default_cc', key='name')[
             Column('name'),
             Column('cc'),
             Index(['name']),
-            ]
         ]
+    ]
+
+    # IEnvironmentSetupParticipant methods
 
     def environment_created(self):
         self._upgrade_db(self.env.get_db_cnx())
@@ -43,7 +46,7 @@ class DefaultCCAdmin(Component):
     def environment_needs_upgrade(self, db):
         cursor = db.cursor()
         try:
-            cursor.execute("select count(*) from component_default_cc")
+            cursor.execute("SELECT COUNT(*) FROM component_default_cc")
             cursor.fetchone()
             return False
         except:
@@ -54,7 +57,7 @@ class DefaultCCAdmin(Component):
 
     def _upgrade_db(self, db):
         try:
-            db_backend, _ = DatabaseManager(self.env)._get_connector()
+            db_backend = DatabaseManager(self.env)._get_connector()[0]
             cursor = db.cursor()
             for table in self.SCHEMA:
                 for stmt in db_backend.to_sql(table):
@@ -68,7 +71,8 @@ class DefaultCCAdmin(Component):
     # IRequestFilter methods
 
     def pre_process_request(self, req, handler):
-        if 'TICKET_ADMIN' in req.perm and req.method == 'POST' and req.path_info.startswith('/admin/ticket/components'):
+        if 'TICKET_ADMIN' in req.perm and req.method == 'POST' \
+                and req.path_info.startswith('/admin/ticket/components'):
             if req.args.get('save') and req.args.get('name'):
                 old_name = req.args.get('old_name')
                 new_name = req.args.get('name')
@@ -95,9 +99,10 @@ class DefaultCCAdmin(Component):
                     cc.insert()
             elif req.args.get('remove'):
                 if req.args.get('sel'):
-                    # If only one component is selected, we don't receive an array, but a string
-                    # preventing us from looping in that case :-/
-                    if isinstance(req.args.get('sel'), unicode) or isinstance(req.args.get('sel'), str):
+                    # If only one component is selected, we don't receive
+                    # an array, but a string preventing us from looping in
+                    # that case.
+                    if isinstance(req.args.get('sel'), basestring):
                         cc = DefaultCC(self.env, req.args.get('sel'))
                         cc.delete()
                     else:
@@ -116,35 +121,45 @@ class DefaultCCAdmin(Component):
     # ITemplateStreamFilter methods
 
     def filter_stream(self, req, method, filename, stream, data):
-        if 'TICKET_ADMIN' in req.perm and req.path_info.startswith('/admin/ticket/components'):
+        if 'TICKET_ADMIN' in req.perm and \
+                req.path_info.startswith('/admin/ticket/components'):
             if data.get('component'):
                 cc = DefaultCC(self.env, data.get('component').name)
-                filter = Transformer('//form[@id="modcomp"]/fieldset/div[@class="field"][2]')
+                filter = Transformer('//form[@id="modcomp"]/fieldset'
+                                     '/div[@class="field"][2]')
                 filter = filter.after(tag.div("Default CC:",
                                               tag.br(),
-                                              tag.input(type='text', name='defaultcc', value=cc.cc),
+                                              tag.input(type='text',
+                                                        name='defaultcc',
+                                                        value=cc.cc),
                                               class_='field')) \
-                                              .before(tag.input(type='hidden', name='old_name', value=cc.name))
+                               .before(tag.input(type='hidden',
+                                                 name='old_name',
+                                                 value=cc.name))
                 return stream | filter
             else:
-                filter = Transformer('//form[@id="addcomponent"]/fieldset/div[@class="buttons"]')
+                filter = Transformer('//form[@id="addcomponent"]'
+                                     '/fieldset/div[@class="buttons"]')
                 stream |= filter.before(tag.div("Default CC:",
                                                 tag.br(),
-                                                tag.input(type='text', name='defaultcc'),
+                                                tag.input(type='text',
+                                                          name='defaultcc'),
                                                 class_='field'))
 
                 default_ccs = DefaultCC.select(self.env)
 
                 stream |= Transformer('//table[@id="complist"]/thead/tr') \
-                    .append(tag.th('Default CC'))
+                          .append(tag.th('Default CC'))
 
                 for i, comp in enumerate(data.get('components')):
                     if comp.name in default_ccs:
                         default_cc = default_ccs[comp.name]
                     else:
                         default_cc = ''
-                    filter = Transformer('//table[@id="complist"]/tbody/tr[%d]' % (i + 1))
-                    stream |= filter.append(tag.td(default_cc, class_='defaultcc'))
+                    filter = Transformer('//table[@id="complist"]'
+                                         '/tbody/tr[%d]' % (i + 1))
+                    stream |= filter.append(tag.td(default_cc,
+                                                   class_='defaultcc'))
                 return stream
 
         return stream
