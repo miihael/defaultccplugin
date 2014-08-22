@@ -15,6 +15,7 @@ from trac.ticket.api import ITicketManipulator
 
 from defaultcc.model import DefaultCC
 
+
 class TicketDefaultCC(Component):
     """Automatically adds a default CC list when new tickets are created.
 

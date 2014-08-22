@@ -24,8 +24,9 @@ class DefaultCC(object):
             if not db:
                 db = self.env.get_db_cnx()
             cursor = db.cursor()
-            cursor.execute("SELECT cc FROM component_default_cc "
-                           "WHERE name=%s", (name,))
+            cursor.execute("""
+                SELECT cc FROM component_default_cc WHERE name=%s
+                """, (name,))
             row = cursor.fetchone()
             if row:
                 self.cc = row[0] or None
@@ -38,14 +39,17 @@ class DefaultCC(object):
             handle_ta = False
 
         cursor = db.cursor()
-        self.env.log.info('Deleting component %s\'s default CC' % self.name)
-        cursor.execute("DELETE FROM component_default_cc WHERE name=%s", (self.name,))
+        self.env.log.info("Deleting component %s's default CC" % self.name)
+        cursor.execute("""
+            DELETE FROM component_default_cc WHERE name=%s
+            """, (self.name,))
 
         if handle_ta:
             db.commit()
 
     def insert(self, db=None):
-        assert self.name, "Cannot create default CC for a component with no name"
+        assert self.name, "Cannot create default CC for a component" \
+                          " without a name"
         if not db:
             db = self.env.get_db_cnx()
             handle_ta = True
@@ -54,9 +58,9 @@ class DefaultCC(object):
 
         cursor = db.cursor()
         self.env.log.debug("Creating %s's default CC" % self.name)
-        cursor.execute("INSERT INTO component_default_cc (name,cc) "
-                       "VALUES (%s,%s)",
-                       (self.name, _fixup_cc_list(self.cc)))
+        cursor.execute("""
+            INSERT INTO component_default_cc (name,cc) VALUES (%s,%s)
+            """, (self.name, _fixup_cc_list(self.cc)))
 
         if handle_ta:
             db.commit()
@@ -66,8 +70,9 @@ class DefaultCC(object):
         if not db:
             db = env.get_db_cnx()
         cursor = db.cursor()
-        cursor.execute("SELECT name,cc FROM component_default_cc "
-                       "ORDER BY name")
+        cursor.execute("""
+            SELECT name,cc FROM component_default_cc ORDER BY name
+            """)
         res = {}
         for name, cc in cursor:
             res[name] = cc
@@ -76,6 +81,7 @@ class DefaultCC(object):
 
 def _fixup_cc_list(cc_value):
     """Fix up cc list separators and remove duplicates."""
+    # Copied from trac.ticket.model
     cclist = []
     for cc in re.split(r'[;,\s]+', cc_value):
         if cc and cc not in cclist:
