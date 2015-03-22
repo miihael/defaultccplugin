@@ -1,4 +1,7 @@
-DefaultCc (0.3) (not yet released) - trunk (3-Clause BSD license)
+DefaultCc (0.4) (not yet released) - trunk (3-Clause BSD license)
+ * #12195: Adapted to Trac 1.0 API and dropped support for Trac < 1.0
+
+DefaultCc (0.3) (not yet released) - branches/0.3 (3-Clause BSD license)
  resolved issues:
  * #4767: Email notification would always be sent to Plugin@domain.com.
  * #4919: Comment would be added and notification sent on ticket creation.

@@ -3,7 +3,7 @@
 # Copyright (C) 2009 ERCIM
 # Copyright (C) 2009 Jean-Guilhem Rouel <jean-guilhem.rouel@ercim.org>
 # Copyright (C) 2009 Vivien Lacourba <vivien.lacourba@ercim.org>
-# Copyright (C) 2012 Ryan J Ollos <ryan.j.ollos@gmail.com>
+# Copyright (C) 2012-2015 Ryan J Ollos <ryan.j.ollos@gmail.com>
 # All rights reserved.
 #
 # This software is licensed as described in the file COPYING, which
@@ -12,7 +12,7 @@
 
 from genshi.builder import tag
 from genshi.filters import Transformer
-from trac.core import Component, TracError, implements
+from trac.core import Component, implements
 from trac.db import Column, DatabaseManager, Index, Table
 from trac.env import IEnvironmentSetupParticipant
 from trac.resource import ResourceNotFound
@@ -41,32 +41,26 @@ class DefaultCCAdmin(Component):
     # IEnvironmentSetupParticipant methods
 
     def environment_created(self):
-        self._upgrade_db(self.env.get_db_cnx())
+        self._upgrade_db()
 
     def environment_needs_upgrade(self, db):
-        cursor = db.cursor()
         try:
-            cursor.execute("SELECT COUNT(*) FROM component_default_cc")
-            cursor.fetchone()
-            return False
-        except:
+            self.env.db_query("SELECT COUNT(*) FROM component_default_cc")
+        except self.env.db_exc.OperationalError:  # No such table
             return True
+        else:
+            return False
 
     def upgrade_environment(self, db):
-        self._upgrade_db(db)
+        self._upgrade_db()
 
-    def _upgrade_db(self, db):
-        try:
-            db_backend = DatabaseManager(self.env)._get_connector()[0]
+    def _upgrade_db(self):
+        db_backend = DatabaseManager(self.env)._get_connector()[0]
+        with self.env.db_transaction as db:
             cursor = db.cursor()
             for table in self.SCHEMA:
                 for stmt in db_backend.to_sql(table):
-                    self.log.debug(stmt)
                     cursor.execute(stmt)
-                    db.commit()
-        except Exception, e:
-            self.log.error(e, exc_info=True)
-            raise TracError(str(e))
 
     # IRequestFilter methods
 
@@ -125,7 +119,7 @@ class DefaultCCAdmin(Component):
                 req.path_info.startswith('/admin/ticket/components'):
             if data.get('component'):
                 cc = DefaultCC(self.env, data.get('component').name)
-                filter = Transformer('//form[@id="modcomp"]/fieldset'
+                filter = Transformer('//form[@class="mod"]/fieldset'
                                      '/div[@class="field"][2]')
                 filter = filter.after(tag.div("Default CC:",
                                               tag.br(),
@@ -151,15 +145,17 @@ class DefaultCCAdmin(Component):
                 stream |= Transformer('//table[@id="complist"]/thead/tr') \
                           .append(tag.th('Default CC'))
 
-                for i, comp in enumerate(data.get('components')):
-                    if comp.name in default_ccs:
-                        default_cc = default_ccs[comp.name]
-                    else:
-                        default_cc = ''
-                    filter = Transformer('//table[@id="complist"]'
-                                         '/tbody/tr[%d]' % (i + 1))
-                    stream |= filter.append(tag.td(default_cc,
-                                                   class_='defaultcc'))
+                components = data.get('components')
+                if components:
+                    for i, comp in enumerate(components):
+                        if comp.name in default_ccs:
+                            default_cc = default_ccs[comp.name]
+                        else:
+                            default_cc = ''
+                        filter = Transformer('//table[@id="complist"]'
+                                             '/tbody/tr[%d]' % (i + 1))
+                        stream |= filter.append(tag.td(default_cc,
+                                                       class_='defaultcc'))
                 return stream
 
         return stream
