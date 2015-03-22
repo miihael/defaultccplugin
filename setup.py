@@ -15,7 +15,7 @@ from setuptools import setup
 
 setup(
     name = 'DefaultCc',
-    version = '0.3',
+    version = '0.4',
     packages = ['defaultcc'],
     include_package_data = True,
     author = "Jean-Guilhem Rouel",
