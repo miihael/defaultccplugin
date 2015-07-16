@@ -10,8 +10,13 @@
 # you should have received as part of this distribution.
 #
 
+from __future__ import with_statement
+
 from genshi.builder import tag
+from genshi.core import START, END
 from genshi.filters import Transformer
+from genshi.filters.transform import INSIDE
+
 from trac.core import Component, implements
 from trac.db import Column, DatabaseManager, Index, Table
 from trac.env import IEnvironmentSetupParticipant
@@ -147,15 +152,35 @@ class DefaultCCAdmin(Component):
 
                 components = data.get('components')
                 if components:
-                    for i, comp in enumerate(components):
-                        if comp.name in default_ccs:
-                            default_cc = default_ccs[comp.name]
-                        else:
-                            default_cc = ''
-                        filter = Transformer('//table[@id="complist"]'
-                                             '/tbody/tr[%d]' % (i + 1))
-                        stream |= filter.append(tag.td(default_cc,
-                                                       class_='defaultcc'))
+                    func = self._inject_default_cc_cols(default_ccs,
+                                                        components)
+                    stream |= Transformer('//table[@id="complist"]'
+                                          '/tbody/tr').apply(func)
                 return stream
 
         return stream
+
+    def _inject_default_cc_cols(self, default_ccs, components):
+        def fn(stream):
+            stack = []
+            idx = 0
+            for mark, event in stream:
+                if mark is None:
+                    yield mark, event
+                    continue
+                kind, data, pos = event
+                if kind is START:
+                    stack.append(data[0].localname)
+                elif kind is END:
+                    if len(stack) == 1 and stack[0] == 'tr':
+                        if idx < len(components):
+                            component = components[idx]
+                            cc = default_ccs.get(component.name) or ''
+                        else:
+                            cc = ''
+                        idx += 1
+                        for event in tag.td(cc, class_='defaultcc'):
+                            yield INSIDE, event
+                    stack.pop()
+                yield mark, (kind, data, pos)
+        return fn
