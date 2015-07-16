@@ -13,7 +13,7 @@
 from __future__ import with_statement
 
 from genshi.builder import tag
-from genshi.core import START, END
+from genshi.core import START, END, QName
 from genshi.filters import Transformer
 from genshi.filters.transform import INSIDE
 
@@ -147,8 +147,9 @@ class DefaultCCAdmin(Component):
 
                 default_ccs = DefaultCC.select(self.env)
 
-                stream |= Transformer('//table[@id="complist"]/thead/tr') \
-                          .append(tag.th('Default CC'))
+                stream |= Transformer('//table[@id="complist"]/thead'
+                                      '/tr/th[3]') \
+                          .after(tag.th('Default CC'))
 
                 components = data.get('components')
                 if components:
@@ -162,7 +163,6 @@ class DefaultCCAdmin(Component):
 
     def _inject_default_cc_cols(self, default_ccs, components):
         def fn(stream):
-            stack = []
             idx = 0
             for mark, event in stream:
                 if mark is None:
@@ -170,9 +170,8 @@ class DefaultCCAdmin(Component):
                     continue
                 kind, data, pos = event
                 if kind is START:
-                    stack.append(data[0].localname)
-                elif kind is END:
-                    if len(stack) == 1 and stack[0] == 'tr':
+                    if data[0].localname == 'td' and \
+                            data[1].get('class') == 'default':
                         if idx < len(components):
                             component = components[idx]
                             cc = default_ccs.get(component.name) or ''
@@ -181,6 +180,5 @@ class DefaultCCAdmin(Component):
                         idx += 1
                         for event in tag.td(cc, class_='defaultcc'):
                             yield INSIDE, event
-                    stack.pop()
                 yield mark, (kind, data, pos)
         return fn
