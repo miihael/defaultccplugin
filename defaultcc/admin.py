@@ -10,10 +10,8 @@
 # you should have received as part of this distribution.
 #
 
-from __future__ import with_statement
-
 from genshi.builder import tag
-from genshi.core import START, END, QName
+from genshi.core import START
 from genshi.filters import Transformer
 from genshi.filters.transform import INSIDE
 
