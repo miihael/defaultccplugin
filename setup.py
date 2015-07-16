@@ -38,5 +38,6 @@ setup(
             'defaultcc.main = defaultcc.main'
         ],
     },
+    install_requires=['Trac'],
     zip_safe = True
 )
