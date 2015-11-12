@@ -1,11 +1,15 @@
 DefaultCc (0.4) (not yet released) - trunk (3-Clause BSD license)
  * #12195: Adapted to Trac 1.0 API and dropped support for Trac < 1.0
 
-DefaultCc (0.3) (not yet released) - branches/0.3 (3-Clause BSD license)
+ DefaultCc (0.3.1) (Not yet released) - 0.3 branch (3-Clause BSD license)
+ resolved issues:
+ * #12558: Tables not created for PostgreSQL.
+
+ DefaultCc (0.3) (2015-07-16) - trunk (3-Clause BSD license)
  resolved issues:
  * #4767: Email notification would always be sent to Plugin@domain.com.
  * #4919: Comment would be added and notification sent on ticket creation.
- 
+
  new features:
  * #10173: CC list can now be set when the Component is added.
 
@@ -17,7 +21,7 @@ DefaultCc (0.2) - trunk (GPLv2 license)
  * #9555: Traceback would occur when a system_message is raised, which could be due
    to component with same name already existing or 'Remove selected items' pressed
    with no items selected.
- 
+
  new features:
  * none
 
