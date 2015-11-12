@@ -47,12 +47,7 @@ class DefaultCCAdmin(Component):
         self._upgrade_db()
 
     def environment_needs_upgrade(self, db):
-        try:
-            self.env.db_query("SELECT COUNT(*) FROM component_default_cc")
-        except self.env.db_exc.OperationalError:  # No such table
-            return True
-        else:
-            return False
+        return 'component_default_cc' not in self._get_tables()
 
     def upgrade_environment(self, db):
         self._upgrade_db()
@@ -64,6 +59,20 @@ class DefaultCCAdmin(Component):
             for table in self.SCHEMA:
                 for stmt in db_backend.to_sql(table):
                     cursor.execute(stmt)
+
+    def _get_tables(self):
+        dburi = self.config.get('trac', 'database')
+        if dburi.startswith('sqlite:'):
+            query = "SELECT name FROM sqlite_master" \
+                    " WHERE type='table' AND NOT name='sqlite_sequence'"
+        elif dburi.startswith('postgres:'):
+            query = "SELECT tablename FROM pg_tables" \
+                    " WHERE schemaname = ANY (current_schemas(false))"
+        elif dburi.startswith('mysql:'):
+            query = "SHOW TABLES"
+        else:
+            raise TracError('Unsupported %s database' % dburi.split(':')[0])
+        return sorted(row[0] for row in self.env.db_transaction(query))
 
     # IRequestFilter methods
 
