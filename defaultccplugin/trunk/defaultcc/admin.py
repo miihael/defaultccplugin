@@ -72,7 +72,10 @@ class DefaultCCAdmin(Component):
             query = "SHOW TABLES"
         else:
             raise TracError('Unsupported %s database' % dburi.split(':')[0])
-        return sorted(row[0] for row in self.env.db_transaction(query))
+        with self.env.db_query as db:
+            cursor = db.cursor()
+            cursor.execute(query)
+            return sorted(row[0] for row in cursor)
 
     # IRequestFilter methods
 
