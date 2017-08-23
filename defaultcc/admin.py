@@ -46,14 +46,14 @@ class DefaultCCAdmin(Component):
     def environment_created(self):
         self._upgrade_db()
 
-    def environment_needs_upgrade(self, db):
+    def environment_needs_upgrade(self, db=None):
         return 'component_default_cc' not in self._get_tables()
 
-    def upgrade_environment(self, db):
+    def upgrade_environment(self, db=None):
         self._upgrade_db()
 
     def _upgrade_db(self):
-        db_backend = DatabaseManager(self.env)._get_connector()[0]
+        db_backend = DatabaseManager(self.env).get_connector()[0]
         with self.env.db_transaction as db:
             cursor = db.cursor()
             for table in self.SCHEMA:
